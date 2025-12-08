@@ -10,6 +10,8 @@ interface StatProps {
 interface StatsListProps {
     stats: StatProps[];
     className?: string;
+    compact?: boolean;
+    tiny?: boolean;
 }
 
 const getIconName = (statName: string): keyof typeof MaterialCommunityIcons.glyphMap => {
@@ -36,22 +38,25 @@ const getColor = (statName: string): string => {
     }
 }
 
-export function StatsList({ stats, className }: StatsListProps) {
+export function StatsList({ stats, className, compact = false, tiny = false }: StatsListProps) {
     const firstRow = stats.slice(0, 3);
     const secondRow = stats.slice(3);
 
+    const iconSize = tiny ? 10 : (compact ? 14 : 24);
+    const textSize = tiny ? 'text-[8px]' : (compact ? 'text-xs' : 'text-base');
+
     return (
-        <View className={`flex-col gap-4 w-full ${className}`}>
+        <View className={`flex-col ${tiny ? 'gap-0.5' : (compact ? 'gap-1' : 'gap-4')} w-full ${className}`}>
             {/* First Row */}
             <View className="flex-row justify-between w-full">
                 {firstRow.map((stat, index) => (
                     <View key={index} className="flex-row items-center gap-1">
                         <MaterialCommunityIcons
                             name={getIconName(stat.name)}
-                            size={24}
+                            size={iconSize}
                             color={getColor(stat.name)}
                         />
-                        <Text className="font-bold text-base">{stat.value}</Text>
+                        <Text className={`font-bold ${textSize}`}>{stat.value}</Text>
                     </View>
                 ))}
             </View>
@@ -61,10 +66,10 @@ export function StatsList({ stats, className }: StatsListProps) {
                     <View key={index} className="flex-row items-center gap-1">
                         <MaterialCommunityIcons
                             name={getIconName(stat.name)}
-                            size={24}
+                            size={iconSize}
                             color={getColor(stat.name)}
                         />
-                        <Text className="font-bold text-base">{stat.value}</Text>
+                        <Text className={`font-bold ${textSize}`}>{stat.value}</Text>
                     </View>
                 ))}
             </View>
