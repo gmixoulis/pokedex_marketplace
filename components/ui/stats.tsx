@@ -46,9 +46,9 @@ export function StatsList({ stats, className, compact = false, tiny = false }: S
     const textSize = tiny ? 'text-[8px]' : (compact ? 'text-xs' : 'text-base');
 
     return (
-        <View className={`flex-col ${tiny ? 'gap-0.5' : (compact ? 'gap-1' : 'gap-4')} w-full ${className}`}>
+        <View className={`flex-col items-center justify-center ${tiny ? 'gap-0.5' : (compact ? 'gap-1' : 'gap-4')} w-full ${className}`}>
             {/* First Row */}
-            <View className="flex-row justify-between w-full">
+            <View className="flex-row justify-between w-auto">
                 {firstRow.map((stat, index) => (
                     <View key={index} className="flex-row items-center gap-1">
                         <MaterialCommunityIcons
@@ -61,7 +61,7 @@ export function StatsList({ stats, className, compact = false, tiny = false }: S
                 ))}
             </View>
             {/* Second Row */}
-            <View className="flex-row justify-between w-full">
+            <View className="flex-row justify-between w-auto">
                 {secondRow.map((stat, index) => (
                     <View key={index} className="flex-row items-center gap-1">
                         <MaterialCommunityIcons

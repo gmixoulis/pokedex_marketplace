@@ -4,7 +4,7 @@ import { StatsList } from "@/components/ui/stats";
 import { fetchPokemons, Pokemon } from "@/hooks/fetch_pokemons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Button, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type ViewMode = 'gallery' | 'list' | 'single';
@@ -31,9 +31,9 @@ export default function Index() {
           </CardTitle>
         </CardHeader>
         <Separator className={`my-1 border-primary-foreground border-[1px] bg-white ${isGallery ? 'h-[0.5px]' : ''}`} />
-        <CardContent style={isGallery ? { paddingHorizontal: 2, gap: 2 } : {}} className={`flex flex-col items-center w-full ${isGallery ? 'gap-1' : 'gap-4'}`}>
+        <CardContent style={isGallery ? { paddingHorizontal: 2, gap: 2 } : {}} className={`flex justify-center text-center flex-col items-center w-full ${isGallery ? 'gap-1' : 'gap-4'}`}>
           <Image source={{ uri: pokemon.image }} className={isGallery ? 'w-16 h-16' : 'w-40 min-h-36'} />
-          <CardDescription className={`text-black mx-2 bg-white/90 ${isGallery ? 'p-1 rounded-sm' : 'p-3 rounded-xl'} w-[90%]`}>
+          <CardDescription className={`text-black justify-center text-center mx-2 bg-white/90 ${isGallery ? 'p-1 rounded-sm' : 'p-3 rounded-xl'} w-[90%]`}>
             <View className={isGallery ? 'mb-0.5' : 'mb-2'}>
               <Text className={`${isGallery ? 'text-[8px]' : 'text-sm'} font-medium text-center`} numberOfLines={isGallery ? 2 : undefined}>
                 {pokemon.description}
@@ -41,6 +41,8 @@ export default function Index() {
             </View>
             <StatsList stats={pokemon.stats} tiny={isGallery} />
           </CardDescription>
+
+          <Button> </Button>
         </CardContent>
       </Card>
     );
