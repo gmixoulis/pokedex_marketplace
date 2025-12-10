@@ -40,7 +40,9 @@
     "@walletconnect/react-native-compat": "^2.23.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "ethers": "^6.16.0",
     "expo": "~54.0.27",
+    "expo-application": "~7.0.8",
     "expo-constants": "~18.0.11",
     "expo-font": "~14.0.10",
     "expo-haptics": "~15.0.8",
@@ -54,9 +56,8 @@
     "expo-web-browser": "~15.0.10",
     "fast-text-encoding": "^1.0.6",
     "nativewind": "^4.2.1",
-    "prettier-plugin-tailwindcss": "^0.5.14",
     "react": "19.1.0",
-    "react-dom": "^19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-get-random-values": "^2.0.0",
@@ -69,14 +70,19 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^3.4.18",
     "tailwindcss-animate": "^1.0.7",
+    "use-debounce": "^10.0.6",
+    "valtio": "^2.1.8",
     "viem": "2.x",
-    "valtio": "^2.1.8"
+    "wagmi": "^3.1.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "babel-plugin-module-resolver": "^5.0.2",
     "babel-plugin-react-native-web": "^0.21.2",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "~5.9.2"
   },
   "private": true

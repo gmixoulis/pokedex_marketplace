@@ -1,11 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { StatsList } from "@/components/ui/stats";
 import { fetchPokemons, Pokemon } from "@/hooks/fetch_pokemons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { Button, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 
 type ViewMode = 'gallery' | 'list' | 'single';
 
@@ -31,8 +33,8 @@ export default function Index() {
           </CardTitle>
         </CardHeader>
         <Separator className={`my-1 border-primary-foreground border-[1px] bg-white ${isGallery ? 'h-[0.5px]' : ''}`} />
-        <CardContent style={isGallery ? { paddingHorizontal: 2, gap: 2 } : {}} className={`flex justify-center text-center flex-col items-center w-full ${isGallery ? 'gap-1' : 'gap-4'}`}>
-          <Image source={{ uri: pokemon.image }} className={isGallery ? 'w-16 h-16' : 'w-40 min-h-36'} />
+        <CardContent style={isGallery ? { paddingHorizontal: 2, gap: 2 } : {}} className={`flex-1 justify-center text-center flex-col items-center w-full ${isGallery ? 'gap-1' : 'gap-2'}`}>
+          <Image source={{ uri: pokemon.image }} className={isGallery ? 'w-16 h-16' : 'w-40 min-h-24'} />
           <CardDescription className={`text-black justify-center text-center mx-2 bg-white/90 ${isGallery ? 'p-1 rounded-sm' : 'p-3 rounded-xl'} w-[90%]`}>
             <View className={isGallery ? 'mb-0.5' : 'mb-2'}>
               <Text className={`${isGallery ? 'text-[8px]' : 'text-sm'} font-medium text-center`} numberOfLines={isGallery ? 2 : undefined}>
@@ -41,10 +43,18 @@ export default function Index() {
             </View>
             <StatsList stats={pokemon.stats} tiny={isGallery} />
           </CardDescription>
-
-          <Button> </Button>
         </CardContent>
-      </Card>
+        <CardFooter className="flex-row justify-between w-full px-2 pb-2">
+          <Button variant="secondary" size="sm" className="px-2 w-[50%] h-6" onPress={() => console.log('pressed')}>
+            <Text className="text-[14px] ">Left</Text>
+          </Button>
+          <Button variant="default" size="sm" className="px-2 w-[50%] h-6" onPress={() => console.log('pressed')}>
+            <Text className="text-[14px] ">Right</Text>
+          </Button>
+        </CardFooter>
+     
+          
+      </Card >
     );
   };
 
@@ -81,8 +91,8 @@ export default function Index() {
         {pokemons.map((pokemon, index) => {
           if (viewMode === 'gallery') {
             return (
-              <View key={index} style={{ width: '31%', minWidth: 100 }}>
-                {renderCard(pokemon, index, { width: '100%', height: 180 })}
+              <View key={index} style={{ width: '39%', minWidth: 100 }}>
+                {renderCard(pokemon, index, { width: '100%', height: 210 })}
               </View>
             )
           }

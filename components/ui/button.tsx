@@ -14,8 +14,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: cn(
-          'bg-primary active:bg-primary/90 shadow-sm shadow-black/5',
-          Platform.select({ web: 'hover:bg-primary/90' })
+          'bg-white w-[50px]  border-white border-[1px] rounded-md border-solid'
+         
         ),
         destructive: cn(
           'bg-destructive active:bg-destructive/90 dark:bg-destructive/60 shadow-sm shadow-black/5',
@@ -30,7 +30,7 @@ const buttonVariants = cva(
           })
         ),
         secondary: cn(
-          'bg-secondary active:bg-secondary/80 shadow-sm shadow-black/5',
+          'bg-type-ice/60 active:bg-secondary/80 shadow-sm shadow-black/5',
           Platform.select({ web: 'hover:bg-secondary/80' })
         ),
         ghost: cn(
@@ -40,8 +40,8 @@ const buttonVariants = cva(
         link: '',
       },
       size: {
-        default: cn('h-10 px-4 py-2 sm:h-9', Platform.select({ web: 'has-[>svg]:px-3' })),
-        sm: cn('h-9 gap-1.5 rounded-md px-3 sm:h-8', Platform.select({ web: 'has-[>svg]:px-2.5' })),
+        default: cn('text-sm text-center  w-[50px] px-4 py-3 sm:py-2 sm:px sm:h-9', Platform.select({ web: 'has-[>svg]:px-3' })),
+        sm: cn('h-9 gap-1.5 rounded-md px-3 w-[50px] sm:h-8', Platform.select({ web: 'has-[>svg]:px-2.5' })),
         lg: cn('h-11 rounded-md px-6 sm:h-10', Platform.select({ web: 'has-[>svg]:px-4' })),
         icon: 'h-10 w-10 sm:h-9 sm:w-9',
       },
@@ -61,13 +61,13 @@ const buttonTextVariants = cva(
   {
     variants: {
       variant: {
-        default: 'text-primary-foreground',
+        default: 'w-[500px]',
         destructive: 'text-white',
         outline: cn(
           'group-active:text-accent-foreground',
           Platform.select({ web: 'group-hover:text-accent-foreground' })
         ),
-        secondary: 'text-secondary-foreground',
+        secondary: 'text-secondary-foreground ',
         ghost: 'group-active:text-accent-foreground',
         link: cn(
           'text-primary group-active:underline',
@@ -75,10 +75,10 @@ const buttonTextVariants = cva(
         ),
       },
       size: {
-        default: '',
-        sm: '',
-        lg: '',
-        icon: '',
+        default: 'text-center text-[1px] w-[50px]',
+        sm: 'h-9 gap-1.5 rounded-md px-3 sm:h-8',
+        lg: 'h-14 w-28 rounded-md px-6 sm:h-10',
+        icon: 'h-10 w-10 sm:h-9 sm:w-9',
       },
     },
     defaultVariants: {
@@ -96,7 +96,7 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
-        className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
+        className={cn(props.disabled && ' ', buttonVariants({ variant, size }), className)}
         role="button"
         {...props}
       />
@@ -106,3 +106,4 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
 
 export { Button, buttonTextVariants, buttonVariants };
 export type { ButtonProps };
+

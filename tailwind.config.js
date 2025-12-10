@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 const { hairlineWidth } = require('nativewind/theme');
-const colors = require('tailwindcss/colors');
+const geistFontPlugin = require('./plugins/geistFontPlugin.js');
+const { platformSelect } = require('nativewind/theme');
 module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
@@ -123,13 +124,17 @@ module.exports = {
       backgroundImage: {
         'pokeball': "url('/images/pokeball-bg.svg')", // Requires a local asset
         'stripe-pattern': "repeating-linear-gradient(45deg, #000 0, #000 2px, transparent 2px, transparent 10px)",
-      }
+      },
+       borderWidth: {
+        hairline: hairlineWidth(),
+      },
     },
   },
   future: {
     hoverOnlyWhenSupported: true,
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [platformSelect({ native: geistFontPlugin, default: [] }),
+require('tailwindcss-animate')],
   // Safelist is crucial for dynamic type colors (e.g. `bg-type-${typeName}`)
   safelist: [
     {

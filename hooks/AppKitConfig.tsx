@@ -1,57 +1,96 @@
-// src/AppKitConfig.ts (or wherever you configure AppKit)
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createAppKit } from '@reown/appkit-react-native';
-import { WagmiAdapter } from '@reown/appkit-wagmi-react-native';
-import "@walletconnect/react-native-compat";
-import { mainnet, sepolia } from 'wagmi/chains';
+// src/AppKitConfig.ts
+import "@walletconnect/react-native-compat"; // MUST BE THE FIRST IMPORT
 
-const projectId = 'YOUR_PROJECT_ID';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAppKit } from "@reown/appkit-react-native";
+import { WagmiAdapter } from "@reown/appkit-wagmi-react-native";
+import { mainnet, sepolia } from "wagmi/chains";
+
+const projectId = "5fc8a56a938fc53868f5ec52ff3a5d72"; // Obtain from https://dashboard.reown.com/
 
 const metadata = {
-    name: 'Pokedex Marketplace',
-    description: 'Pokedex Marketplace App',
-    url: 'https://pokedex-marketplace.com',
-    icons: ['https://avatars.githubusercontent.com/u/179229932'],
-    redirect: {
-        native: 'pokedex-marketplace://',
-    }
+  name: "My Awesome dApp",
+  description: "My dApp description",
+  url: "https://myapp.com",
+  icons: ["https://myapp.com/icon.png"],
+  redirect: {
+    native: "YOUR_APP_SCHEME://",
+    universal: "YOUR_APP_UNIVERSAL_LINK.com",
+  },
 };
 
-export const wagmiAdapter = new WagmiAdapter({
-    projectId,
-    networks: [mainnet, sepolia],
+// Initialize Wagmi adapter
+const wagmiAdapter = new WagmiAdapter({
+  projectId,
+  networks: [mainnet, sepolia], // Add all chains you want to support
 });
 
-export const appKit = createAppKit({
+// Lazy initialization - only create appKit in client environment
+let _appKit: any = null;
+
+function getAppKit() {
+  if (_appKit) return _appKit;
+  
+  // Only initialize in client-side environment
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  _appKit = createAppKit({
     projectId,
     metadata,
+    networks: [mainnet, sepolia], // Must match the networks in wagmiAdapter
     adapters: [wagmiAdapter],
-    networks: [mainnet, sepolia],
     storage: {
-        getItem: async <T = any>(key: string): Promise<T | undefined> => {
-            const value = await AsyncStorage.getItem(key);
-            if (!value) return undefined;
-            try {
-                return JSON.parse(value) as T;
-            } catch {
-                return value as unknown as T;
-            }
-        },
-        setItem: async (key: string, value: any) => {
-            const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-            await AsyncStorage.setItem(key, stringValue);
-        },
-        removeItem: async (key: string) => {
-            await AsyncStorage.removeItem(key);
-        },
-        getKeys: async () => {
-            const keys = await AsyncStorage.getAllKeys();
-            return [...keys];
-        },
-        getEntries: async <T = any>() => {
-            const keys = await AsyncStorage.getAllKeys();
-            const entries = await AsyncStorage.multiGet(keys);
-            return entries as [string, T][];
+      getItem: async (key) => {
+        try {
+          const res = await AsyncStorage.getItem(key);
+          return res as any;
+        } catch (error) {
+          console.warn('AsyncStorage getItem error:', error);
+          return null;
         }
-    }
-});
+      },
+      setItem: async (key, value) => {
+        try {
+          await AsyncStorage.setItem(key, value as string);
+        } catch (error) {
+          console.warn('AsyncStorage setItem error:', error);
+        }
+      },
+      removeItem: async (key) => {
+        try {
+          await AsyncStorage.removeItem(key);
+        } catch (error) {
+          console.warn('AsyncStorage removeItem error:', error);
+        }
+      },
+      getKeys: async () => {
+        try {
+          return await AsyncStorage.getAllKeys() as any;
+        } catch (error) {
+          console.warn('AsyncStorage getKeys error:', error);
+          return [];
+        }
+      },
+      getEntries: async () => {
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const entries = await AsyncStorage.multiGet(keys);
+          return entries as any;
+        } catch (error) {
+          console.warn('AsyncStorage getEntries error:', error);
+          return [];
+        }
+      },
+    },
+  });
+
+  return _appKit;
+}
+
+// Export lazy-initialized appKit
+export const appKit = getAppKit();
+
+// Export the wagmi config for provider setup
+export const wagmiConfig = wagmiAdapter.wagmiConfig;
