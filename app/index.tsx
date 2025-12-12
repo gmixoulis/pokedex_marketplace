@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { StatsList } from "@/components/ui/stats";
@@ -7,8 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-
+import Modal from "../components/ui/modal";
 type ViewMode = 'gallery' | 'list' | 'single';
 
 export default function Index() {
@@ -45,12 +43,14 @@ export default function Index() {
           </CardDescription>
         </CardContent>
         <CardFooter className="flex-row justify-between w-full px-2 pb-2">
-          <Button variant="secondary" size="sm" className="px-2 w-[50%] h-6" onPress={() => console.log('pressed')}>
+          {/* <Button variant="secondary" size="sm" className="px-2 w-[50%] h-6" onPress={() => console.log('pressed')}>
             <Text className="text-[14px] ">Left</Text>
           </Button>
           <Button variant="default" size="sm" className="px-2 w-[50%] h-6" onPress={() => console.log('pressed')}>
             <Text className="text-[14px] ">Right</Text>
-          </Button>
+          </Button> */}
+          <Modal pokemon_url={pokemon.url} pokemon_name={pokemon.name}/>
+          
         </CardFooter>
      
           
@@ -60,7 +60,8 @@ export default function Index() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-foreground" >
-      <View className="px-4 py-2 flex-row justify-end items-center z-10">
+   
+      <View className="px-4  flex-row justify-end items-center z-10">
         <View className="flex-row gap-2 bg-muted/20 p-1 rounded-lg">
           <TouchableOpacity
             onPress={() => setViewMode('list')}
@@ -86,7 +87,7 @@ export default function Index() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         className="flex-1"
-        contentContainerClassName={`p-4 gap-6 pb-20 ${viewMode === 'gallery' ? 'flex-row flex-wrap justify-center' : 'items-center'}`}
+        contentContainerClassName={`p-4 gap-6  ${viewMode === 'gallery' ? 'flex-row flex-wrap justify-center' : 'items-center'}`}
       >
         {pokemons.map((pokemon, index) => {
           if (viewMode === 'gallery') {
