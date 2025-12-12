@@ -1,14 +1,23 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 interface ModalProps {
   pokemon_url: string;
   pokemon_name: string;
+  pokemon_types: string[];
+  pokemon_description: string;
+  pokemon_stats: {
+        name: string;
+        value: number;
+    }[];
+  pokemon_id: number;
+  pokemon_image: string;
+  
 }
 
-const App = ({pokemon_url, pokemon_name}: ModalProps) => {
+const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_types, pokemon_description, pokemon_id}: ModalProps) => {
   const [modalVisible, setModalVisible] = useState(false);
   return (
     <SafeAreaProvider>
@@ -22,10 +31,12 @@ const App = ({pokemon_url, pokemon_name}: ModalProps) => {
             setModalVisible(!modalVisible);
           }}>
           <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalText}>
-                {pokemon_url}
-              </Text>
+
+            <View style={styles.modalView} className="flex-1 flex-row justify-between items-top">
+          <Image source={{uri: pokemon_image}}  className="w-16 h-16"/> 
+            <Text className="text-2xl font-bold text-center"> {pokemon_name} </Text>
+
+            
               <Pressable
                 style={[styles.button, styles.buttonClose]}
                 onPress={() => setModalVisible(!modalVisible)}>

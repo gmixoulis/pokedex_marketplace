@@ -49,7 +49,7 @@ export default function Index() {
           <Button variant="default" size="sm" className="px-2 w-[50%] h-6" onPress={() => console.log('pressed')}>
             <Text className="text-[14px] ">Right</Text>
           </Button> */}
-          <Modal pokemon_url={pokemon.url} pokemon_name={pokemon.name}/>
+          <Modal pokemon_url={pokemon.url} pokemon_name={pokemon.name} pokemon_stats={pokemon.stats} pokemon_image={pokemon.image} pokemon_types={pokemon.types} pokemon_description={pokemon.description} pokemon_id={pokemon.id}/>
           
         </CardFooter>
      

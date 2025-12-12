@@ -14,7 +14,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from "react";
-import { Platform, useColorScheme } from 'react-native';
+import { Platform, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'text-encoding';
 import { WagmiProvider } from 'wagmi';
@@ -59,15 +59,16 @@ export default function RootLayout() {
 
                 <Stack>
                   <Stack.Screen name="index" options={{
-                    headerLargeTitle: true,
+                    headerLargeTitle: Platform.OS !== 'ios',
                     headerTransparent: false,
                     title: "Pokedex",
-                    navigationBarHidden: true,
-                  headerRight: () => <AppKitButton />,
+                    headerRight: () => (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%', backgroundColor: 'transparent' }}>
+                        <AppKitButton size='sm' />
+                      </View>
+                    ),
                   }} />
-
-                
-                                </Stack>
+</Stack>
                   
 
                 <AppKit />
