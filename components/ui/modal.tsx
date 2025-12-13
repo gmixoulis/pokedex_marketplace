@@ -31,10 +31,13 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
             setModalVisible(!modalVisible);
           }}>
           <View style={styles.centeredView}>
-
-            <View style={styles.modalView} className="flex-1 flex-row justify-between items-top">
-          <Image source={{uri: pokemon_image}}  className="w-16 h-16"/> 
-            <Text className="text-2xl font-bold text-center"> {pokemon_name} </Text>
+         
+            <View style={styles.modalView} className="flex-4 flex-row justify-between gap-6 m-12 p-12 items-top">
+          
+              
+              <Image source={{uri: pokemon_image}}  style={{width: '50%', height: '50%'}} /> 
+              <Text> {pokemon_description}</Text>
+                
 
             
               <Pressable
@@ -44,7 +47,10 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
                     
               </Pressable>
             </View>
+            
+ 
           </View>
+          
         </Modal>
         <Pressable
           style={[styles.button, styles.buttonOpen]}
