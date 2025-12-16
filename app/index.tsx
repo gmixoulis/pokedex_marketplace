@@ -3,20 +3,75 @@ import { Separator } from "@/components/ui/separator";
 import { StatsList } from "@/components/ui/stats";
 import { fetchPokemons, Pokemon } from "@/hooks/fetch_pokemons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, Image, Platform, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PokeballIcon from "../components/icons/PokeballIcon";
 import Modal from "../components/ui/modal";
+import { setWalletAddress } from "../store/walletStore";
+
 type ViewMode = 'gallery' | 'list' | 'single';
 
 export default function Index() {
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 10;
+  
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const loadPokemons = useCallback(async (isInitial = false) => {
+    if (loading || (!hasMore && !isInitial)) return;
+    
+    setLoading(true);
+    try {
+      const currentOffset = isInitial ? 0 : offset;
+      const result = await fetchPokemons(LIMIT, currentOffset);
+      
+      if (isInitial) {
+        setPokemons(result.pokemons);
+      } else {
+        setPokemons(prev => [...prev, ...result.pokemons]);
+      }
+      
+      setHasMore(result.hasMore);
+      setOffset(currentOffset + LIMIT);
+      
+      if (!result.hasMore && !isInitial) {
+        Alert.alert("That's all!", "No more Pokemon to fetch.");
+      }
+    } catch (error) {
+      console.error('Error loading pokemons:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, hasMore, offset]);
 
   useEffect(() => {
-    fetchPokemons().then((pokemon: Pokemon[]) => setPokemons(pokemon));
-  }, [])
+    loadPokemons(true);
+    
+    // Auto-connect on web if already authorized
+    if (Platform.OS === 'web' && window.ethereum) {
+       window.ethereum.request({ method: 'eth_accounts' })
+        .then((accounts: string[]) => {
+          if (accounts && accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          }
+        })
+        .catch(console.error);
 
+        window.ethereum.on('accountsChanged', (accounts: string[]) => {
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          } else {
+            setWalletAddress(null);
+          }
+        });
+    }
+  }, []);
   const renderCard = (pokemon: Pokemon, index: number, styles: any = {}) => {
     const isGallery = viewMode === 'gallery';
     return (
@@ -58,10 +113,52 @@ export default function Index() {
     );
   };
 
+  const renderItem = useCallback(({ item, index }: { item: Pokemon; index: number }) => {
+    return (
+      <View style={viewMode === 'gallery' ? { width: '48%', marginBottom: 12 } : viewMode === 'list' ? { width: 288, height: 450, marginBottom: 16 } : { width: '100%', height: 600, marginBottom: 16 }}>
+        {renderCard(item, index, { width: '100%', height: viewMode === 'gallery' ? 210 : '100%' })}
+      </View>
+    );
+  }, [viewMode]);
+
+  const renderFooter = () => {
+    if (!loading) return null;
+    return (
+      <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#a855f7" />
+        <Text style={{ color: isDark ? '#fff' : '#000', marginTop: 8 }}>Loading more Pokemon...</Text>
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-background-foreground" >
+    <SafeAreaView className="flex-1 bg-background-foreground" style={{ position: 'relative' }}>
+      {/* Pokeball Watermark Background */}
+      <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', zIndex: 0 }]} pointerEvents="none">
+        {[...Array(25)].map((_, i) => {
+          const left = ((i * 37) % 100);
+          const top = ((i * 53) % 100);
+          const size = 40 + ((i * 17) % 60);
+          const rotation = (i * 29) % 360;
+          const opacity = isDark ? 0.15 : 0.12;
+          
+          return (
+            <View
+              key={i}
+              style={{
+                position: 'absolute',
+                left: `${left}%`,
+                top: `${top}%`,
+                transform: [{ rotate: `${rotation}deg` }],
+              }}
+            >
+              <PokeballIcon size={size} opacity={opacity} />
+            </View>
+          );
+        })}
+      </View>
    
-      <View className="px-4  flex-row justify-end items-center z-10">
+      <View className="px-4 flex-row justify-end items-center z-10">
         <View className="flex-row gap-2 bg-muted/20 p-1 rounded-lg">
           <TouchableOpacity
             onPress={() => setViewMode('list')}
@@ -84,42 +181,24 @@ export default function Index() {
         </View>
       </View>
 
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        className="flex-1"
-        contentContainerClassName={`p-4 gap-6  ${viewMode === 'gallery' ? 'flex-row flex-wrap justify-center' : 'items-center'}`}
-      >
-        {pokemons.map((pokemon, index) => {
-          if (viewMode === 'gallery') {
-            return (
-              <View key={index} style={{ width: '39%', minWidth: 100 }}>
-                {renderCard(pokemon, index, { width: '100%', height: 210 })}
-              </View>
-            )
-          }
-
-          if (viewMode === 'list') {
-            // Original List Mode
-            // Using fixed width 72 as per original code
-            return (
-              <View key={index} className="w-72 h-[450px]">
-                {renderCard(pokemon, index, { width: '100%', height: '100%' })}
-              </View>
-            );
-          }
-
-          if (viewMode === 'single') {
-            // Single Mode (One Each) - For now same as list but maybe intended to be paging?
-            // User said "one each". I'll treat it as full screen width for now or keep similar to list until specified.
-            // Actually, "one each" likely implies swiping, but for now scrolling big cards is a start.
-            return (
-              <View key={index} className="w-full h-[600px]">
-                {renderCard(pokemon, index, { width: '100%', height: '100%' })}
-              </View>
-            );
-          }
-        })}
-      </ScrollView>
+      <FlatList
+        data={pokemons}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
+        numColumns={viewMode === 'gallery' ? 2 : 1}
+        key={viewMode}
+        contentContainerStyle={{ 
+          padding: 16, 
+          gap: 12,
+          alignItems: viewMode === 'gallery' ? undefined : 'center'
+        }}
+        columnWrapperStyle={viewMode === 'gallery' ? { justifyContent: 'space-between' } : undefined}
+        onEndReached={() => loadPokemons(false)}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        style={{ zIndex: 1 }}
+      />
     </SafeAreaView>
   );
 }
+

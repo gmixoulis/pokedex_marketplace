@@ -11,10 +11,19 @@ export interface Pokemon {
     }[];
 }
 
-export const fetchPokemons = async (limit: number = 10): Promise<Pokemon[]> => {
+export interface FetchResult {
+    pokemons: Pokemon[];
+    totalCount: number;
+    hasMore: boolean;
+}
+
+export const fetchPokemons = async (limit: number = 10, offset: number = 0): Promise<FetchResult> => {
     try {
-        const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}`);
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`);
         const data = await response.json();
+        
+        const totalCount = data.count;
+        const hasMore = offset + limit < totalCount;
 
         const detailedPokemons: Pokemon[] = await Promise.all(
             data.results.map(async (item: { name: string; url: string }) => {
@@ -44,7 +53,11 @@ export const fetchPokemons = async (limit: number = 10): Promise<Pokemon[]> => {
             })
         );
 
-        return detailedPokemons;
+        return {
+            pokemons: detailedPokemons,
+            totalCount,
+            hasMore
+        };
     } catch (error) {
         console.error('Error fetching pokemons:', error);
         throw error;

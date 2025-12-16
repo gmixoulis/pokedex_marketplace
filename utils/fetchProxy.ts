@@ -17,6 +17,8 @@ if (typeof window !== 'undefined') {
       const headers = new Headers(init?.headers || {});
       headers.delete('user-agent');
       headers.delete('User-Agent');
+      // Override Origin to avoid Expo CLI CORS middleware crash with "host.exp.Exponent"
+      headers.set('origin', 'http://localhost:8081');
       
       const modifiedInit = {
         ...init,

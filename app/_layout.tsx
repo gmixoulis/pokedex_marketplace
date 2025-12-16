@@ -1,34 +1,39 @@
 // Import fetch proxy FIRST to intercept API calls (only affects web platform)
-import '../utils/fetchProxy';
-
+import "@ethersproject/shims";
+import { MetaMaskProvider } from '@metamask/sdk-react-native';
 import { ThemeProvider } from "@react-navigation/native";
-import {
-  AppKit,
-  AppKitButton,
-  AppKitProvider
-} from "@reown/appkit-react-native";
 import { PortalHost } from "@rn-primitives/portal";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import "@walletconnect/react-native-compat";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from "react";
-import { Platform, useColorScheme, View } from 'react-native';
+import { Image, Platform, Text, useColorScheme, View } from 'react-native';
+import "react-native-get-random-values";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import "react-native-url-polyfill/auto";
 import 'text-encoding';
-import { WagmiProvider } from 'wagmi';
+import ConnectButton from "../components/ConnectButton";
 import "../global.css";
-import { appKit, wagmiConfig } from "../hooks/AppKitConfig";
+import { skipMetaMaskProvider } from "../hooks/metamask-polyfill";
 import { NAV_THEME } from "../lib/theme";
+
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
-// Only use AppKit on native mobile platforms (iOS/Android) where it works properly
 // Web has CORS issues with WalletConnect's API
 const isNativeMobile = Platform.OS === 'ios' || Platform.OS === 'android';
 
 
+const sdkOptions = {
+  dappMetadata: {
+    name: 'Demo React Native App',
+    url: 'http://localhost:8081',
+    iconUrl: '',
+    scheme: 'pokedexmarketplace',
+  },
+  infuraAPIKey: '355f29324c6e482083ea80b99da6ba1d',
+  checkInstallationImmediately: false, // Prevent immediate check which might crash
+};
 
 
 const queryClient = new QueryClient();
@@ -48,55 +53,49 @@ export default function RootLayout() {
     return null;
   }
 
+  const AppContent = (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+        <StatusBar style="auto"/>
+
+        <Stack>
+          <Stack.Screen name="index" options={{
+            headerLargeTitle: Platform.OS !== 'ios',
+            headerTransparent: false,
+            headerTitle: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Image 
+                  source={require('../assets/images/ash-ketchum.png')} 
+                  style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: '#353840' }} 
+                  className="rounded-full"
+                />
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: colorScheme === 'dark' ? 'white' : 'black' }}>Pokedex</Text>
+              </View>
+            ),
+            
+            
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%', backgroundColor: 'transparent' }}>
+                <ConnectButton  />
+              </View>
+            ),
+          }} />
+        </Stack>
+
+        <PortalHost />
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+
   return (
     <SafeAreaProvider>
-      {appKit ? (
-        <AppKitProvider instance={appKit}>
-          <WagmiProvider config={wagmiConfig}>
-            <QueryClientProvider client={queryClient}>
-              <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-                <StatusBar style="auto"/>
-
-                <Stack>
-                  <Stack.Screen name="index" options={{
-                    headerLargeTitle: Platform.OS !== 'ios',
-                    headerTransparent: false,
-                    title: "Pokedex",
-                    headerRight: () => (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%', backgroundColor: 'transparent' }}>
-                        <AppKitButton size='sm' />
-                      </View>
-                    ),
-                  }} />
-</Stack>
-                  
-
-                <AppKit />
-                <PortalHost />
-              </ThemeProvider>
-            </QueryClientProvider>
-          </WagmiProvider>
-        </AppKitProvider>
-      ) : (
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-              <StatusBar style="auto" />
-
-              <Stack>
-                <Stack.Screen name="index" options={{
-                  headerLargeTitle: true,
-                  headerTransparent: false,
-                  title: "Pokedexxx",
-                }} />
-
-              </Stack>
-
-              <PortalHost />
-            </ThemeProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
-      )}
+        {skipMetaMaskProvider ? (
+          AppContent
+        ) : (
+          <MetaMaskProvider sdkOptions={sdkOptions}>
+            {AppContent}
+          </MetaMaskProvider>
+        )}
     </SafeAreaProvider>
   );
 }
