@@ -18,7 +18,16 @@ const ConnectButton = () => {
       if (Platform.OS === 'web') {
         if (window.ethereum) {
           const provider = new ethers.providers.Web3Provider(window.ethereum as any);
-          await provider.send("eth_requestAccounts", []);
+          
+          // Add timeout to prevent stuck state
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Connection timed out. Please check MetaMask extension.")), 15000)
+          );
+          
+          const connectPromise = provider.send("eth_requestAccounts", []);
+          
+          await Promise.race([connectPromise, timeoutPromise]);
+          
           const signer = provider.getSigner();
           const userAddress = await signer.getAddress();
           setWalletAddress(userAddress);
@@ -33,22 +42,42 @@ const ConnectButton = () => {
           return;
         }
         console.log("Connecting via SDK...");
-        const accounts = await sdk?.connect();
+        
+        // Add timeout for SDK too
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Connection timed out")), 15000)
+        );
+        
+        const accounts = await Promise.race([sdk?.connect(), timeoutPromise]) as string[];
         if (accounts && accounts.length > 0) {
           setWalletAddress(accounts[0]);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Connection failed:", error);
+      alert(error.message || "Failed to connect wallet");
     } finally {
       setConnecting(false);
     }
   };
 
-  const disconnect = () => {
+  const disconnect = async () => {
     setWalletAddress(null);
     setShowMenu(false);
-    // For native SDK terminate session
+    
+    // Web: Revoke permissions to truly disconnect
+    if (Platform.OS === 'web' && window.ethereum) {
+      try {
+        await window.ethereum.request({
+          method: "wallet_revokePermissions",
+          params: [{ eth_accounts: {} }]
+        });
+      } catch (e) {
+        console.error("Error revoking permissions:", e);
+      }
+    }
+
+    // Mobile: Terminate session
     if (Platform.OS !== 'web') {
       sdk?.terminate();
     }
