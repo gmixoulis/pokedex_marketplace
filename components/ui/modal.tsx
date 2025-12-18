@@ -11,7 +11,7 @@ import { setConnecting, setWalletAddress, walletStore } from '../../store/wallet
 import { completePipeline, getTotalClaims, hasUserClaimed } from '../../utils/PokemonNFT-Pipeline';
 
 // Placeholder Contract Address - User to update
-const CONTRACT_ADDRESS = '0xf0b0ec72049FDeCbd57E3d24Ef5E9D7A7827263B';
+const CONTRACT_ADDRESS = process.env.EXPO_PUBLIC_CONTRACT_ADDRESS || '0xf0b0ec72049FDeCbd57E3d24Ef5E9D7A7827263B';
 interface ModalProps {
   pokemon_url: string;
   pokemon_name: string;
@@ -56,23 +56,38 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
     setConnecting(true);
     try {
       if (Platform.OS === 'web') {
-        if (window.ethereum) {
-          const provider = new ethers.providers.Web3Provider(window.ethereum as any);
-          
-          // Add timeout to prevent stuck state
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Connection timed out. Please check MetaMask extension.")), 15000)
+        // Find MetaMask provider specifically (handles multiple wallet extensions like Phantom)
+        let ethereum = window.ethereum;
+        
+        // If multiple providers exist, find MetaMask specifically
+        if (window.ethereum?.providers?.length) {
+          const metaMaskProvider = window.ethereum.providers.find(
+            (p: any) => p.isMetaMask && !p.isPhantom
           );
-          
-          const connectPromise = provider.send("eth_requestAccounts", []);
-          
-          await Promise.race([connectPromise, timeoutPromise]);
-          
-          const signer = provider.getSigner();
-          const userAddress = await signer.getAddress();
-          setWalletAddress(userAddress);
-        } else {
-          Alert.alert("Install MetaMask", "Please install MetaMask to connect.");
+          if (metaMaskProvider) {
+            ethereum = metaMaskProvider;
+            console.log('Found MetaMask among multiple providers');
+          }
+        } else if (window.ethereum?.isPhantom) {
+          console.warn('Phantom is primary provider. Looking for MetaMask...');
+        }
+        
+        if (!ethereum?.isMetaMask) {
+          Alert.alert("MetaMask Not Found", "Please make sure MetaMask is installed and enabled.");
+          setConnecting(false);
+          return;
+        }
+        
+        console.log('Requesting accounts from MetaMask...');
+        
+        // Use direct ethereum.request for better compatibility
+        const accounts = await ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        
+        if (accounts && accounts.length > 0) {
+          console.log('Connected:', accounts[0]);
+          setWalletAddress(accounts[0]);
         }
       } else {
         // Native SDK
@@ -105,10 +120,28 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
     }
   }, [modalVisible, address, pokemon_id]);
 
+  // Helper to get MetaMask provider specifically
+  const getMetaMaskProvider = () => {
+    let ethereum = window.ethereum;
+    
+    if (window.ethereum?.providers?.length) {
+      const metaMaskProvider = window.ethereum.providers.find(
+        (p: any) => p.isMetaMask && !p.isPhantom
+      );
+      if (metaMaskProvider) {
+        ethereum = metaMaskProvider;
+      }
+    }
+    
+    return ethereum?.isMetaMask ? ethereum : null;
+  };
+
   const checkStatus = async () => {
-    if (!window.ethereum) return;
+    const ethereum = getMetaMaskProvider();
+    if (!ethereum) return;
+    
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum as any);
+      const provider = new ethers.providers.Web3Provider(ethereum as any);
       const contract = new ethers.Contract(CONTRACT_ADDRESS, PokemonABI, provider);
       
       const claimed = await hasUserClaimed(contract, address, pokemon_id);
@@ -120,21 +153,24 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
       console.error("Error checking status:", error);
     }
   };
+  
   const handleClaim = async () => {
     if (!isConnected || !address) {
        await connect();
        return;
     }
 
-    if (!window.ethereum && Platform.OS === 'web') {
-      Alert.alert("Wallet not found", "Please install a wallet like MetaMask.");
+    const ethereum = getMetaMaskProvider();
+    
+    if (!ethereum && Platform.OS === 'web') {
+      Alert.alert("Wallet not found", "Please install MetaMask.");
       return;
     }
 
     setClaiming(true);
     try {
-      // Connect to the user's browser wallet (MetaMask, etc.)
-      const provider = new ethers.providers.Web3Provider(window.ethereum as any);
+      // Connect to MetaMask specifically
+      const provider = new ethers.providers.Web3Provider(ethereum as any);
       const signer = provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, PokemonABI, signer);
 
@@ -249,7 +285,7 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
                             paddingHorizontal: 32 
                           }}
                         >
-                          <Text className="text-[#ffffff] font-extrabold text-lg">
+                          <Text className="text-white font-extrabold text-lg" style={{ color: 'white' }}>
                             {!isConnected ? (isConnecting ? "Connecting..." : "Connect Wallet") : 
                             (claiming ? "Claiming..." : hasClaimed ? "Already Claimed" : "Claim Pokemon")}
                           </Text>
@@ -261,7 +297,7 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
                     <View className="border border-[#353840] rounded-xl overflow-hidden py-6">
                       <View className="bg-[#262b2fa0] pt-8 pb-10 border-b border-[#353840] flex-row justify-center items-center">
                         <View className="flex-row items-center gap-2">
-                          <Text className="font-black text-4xl text-white tracking-wider">TRAITS</Text>
+                          <Text className="font-extrabold text-white tracking-wider text-xl">TRAITS</Text>
                         </View>
                       </View>
                       
@@ -313,11 +349,11 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
                   </View>
                 </View>
               ) : (
-                // MOBILE LAYOUT - Vertical with ScrollView
+                // MOBILE LAYOUT - Vertical with ScrollView (Matching Web Styling)
                 <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
                   <View className="px-4 pb-6 w-full">
                     {/* Image Card - Full Width on Mobile */}
-                    <View style={{ width: '100%', height: 280, marginBottom: 16 }}>
+                    <View style={{ width: '100%', height: 300, marginBottom: 16 }}>
                       <View className="w-full h-full border border-[#353840] rounded-xl overflow-hidden bg-[#262b2f] items-center justify-center">
                         <Image 
                           source={{ uri: pokemon_image }} 
@@ -327,95 +363,112 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
                       </View>
                     </View>
 
-                    {/* Header Info */}
-                    <View className="mb-4">
-                      <View className="flex-row items-center gap-1 mb-1">
-                        <Text className="text-[#2081e2] font-semibold text-xs">Pokemon Collection</Text>
-                        <MaterialCommunityIcons name="check-decagram" size={12} color="#2081e2" />
+                    {/* Header Info - Matching Web Styling */}
+                    <View className="mb-6">
+                      <View className="flex-row items-center gap-1 mb-2">
+                        <Text className="text-[#2081e2] font-bold text-base">Pokemon Collection</Text>
+                        <MaterialCommunityIcons name="check-decagram" size={14} color="#2081e2" />
                       </View>
-                      <Text className="py-5 text-2xl font-bold text-white mb-2">{pokemon_name} #{pokemon_id}</Text>
-                      {isConnected ? (
-                        <Text className="py-5 text-[#8a939b] text-xs mb-2">Address: <Text className="text-[#2081e2]">{address?.slice(0,6)}...{address?.slice(-4)}</Text></Text> 
-                      ) : (
-                        <Text className="py-5 text-[#8a939b] text-xs mb-2">Connect wallet to view status</Text>
-                      )}
+                      <Text style={{ fontSize: 22, fontWeight: 'bold' }} className="text-gray-900 mb-2">{pokemon_name} #{pokemon_id}</Text>
+                      <View className="flex-row items-center gap-2 mb-4 mt-2">
+                        {isConnected ? (
+                          <Text style={{ fontSize: 12, fontWeight: 'bold' }} className="text-[#8a939b]" numberOfLines={1}>Your Address: <Text className="text-[#2081e2]">{address?.slice(0,6)}...{address?.slice(-4)}</Text></Text> 
+                        ) : (
+                          <Text style={{ fontSize: 12, fontWeight: 'bold' }} className="text-[#8a939b]">Connect wallet to view status</Text>
+                        )}
+                      </View>
                       
+                      {/* Stats Row - Matching Web */}
                       {isConnected && (
-                        <View className="flex-row gap-2 flex-wrap">
-                          <View className="flex-row items-center bg-[#262b2f] px-2 py-1 rounded-lg border border-[#353840]">
-                            <MaterialCommunityIcons name="trophy-outline" size={12} color="#ffd700" style={{marginRight: 4}} />
-                            <Text className="text-gray-300 text-xs">Claims: <Text className="text-white font-bold">{totalClaims}</Text></Text>
+                        <View className="flex-row gap-3 mb-4 flex-wrap">
+                          <View className="flex-row items-center bg-[#262b2f] px-3 py-1 rounded-lg border border-[#353840]">
+                            <MaterialCommunityIcons name="trophy-outline" size={14} color="#ffd700" style={{marginRight: 6}} />
+                            <Text className="text-gray-600">Total Claims: <Text className="text-gray-900 font-bold">{totalClaims}</Text></Text>
                           </View>
                           {hasClaimed && (
-                            <View className="flex-row items-center bg-[rgba(32,129,226,0.1)] px-2 py-1 rounded-lg border border-[#2081e2]">
-                              <MaterialCommunityIcons name="check-circle" size={12} color="#2081e2" style={{marginRight: 4}} />
-                              <Text className="text-[#2081e2] font-bold text-xs">You own this!</Text>
+                            <View className="flex-row items-center bg-[rgba(32,129,226,0.1)] px-3 py-1 rounded-lg border border-[#2081e2]">
+                              <MaterialCommunityIcons name="check-circle" size={16} color="#2081e2" style={{marginRight: 6}} />
+                              <Text className="text-[#2081e2] font-bold">You own this!</Text>
                             </View>
                           )}
                         </View>
                       )}
                     </View>
 
-                    {/* Action Button */}
-                    <View className="bg-[#262b2f] border border-[#353840] rounded-xl p-3 mb-4">
+                    {/* Price / Action Card - Matching Web Dark Style */}
+                    <View className="bg-[#262b2fa0] border border-[#353840] rounded-xl p-4 mb-6">
                       <Pressable 
-                        className="bg-[#2081e2] py-3 rounded-lg items-center active:opacity-90"
+                        className="py-4 rounded-lg items-center active:opacity-90 border border-[#444]"
                         onPress={handleClaim}
                         disabled={claiming || hasClaimed}
-                        style={{ opacity: (claiming || hasClaimed) ? 0.7 : 1, backgroundColor: hasClaimed ? '#353840' : '#2081e2' }}
+                        style={{ 
+                          backgroundColor: hasClaimed ? '#353840' : '#580505', 
+                          opacity: (claiming || hasClaimed) ? 0.7 : 1,
+                          paddingHorizontal: 24
+                        }}
                       >
-                        <Text className="text-[#ffffff] font-bold text-sm">
+                        <Text className="text-white font-extrabold text-lg" style={{ color: 'white' }}>
                           {!isConnected ? (isConnecting ? "Connecting..." : "Connect Wallet") : 
                           (claiming ? "Claiming..." : hasClaimed ? "Already Claimed" : "Claim Pokemon")}
                         </Text>
                       </Pressable>
                     </View>
 
-                    {/* Traits Grid - Smaller on Mobile */}
+                    {/* Traits Grid - Matching Web High Fidelity Style */}
                     <View className="border border-[#353840] rounded-xl overflow-hidden">
-                      <View className="bg-[#262b2f] p-3 border-b border-[#353840] flex-row justify-between items-center">
+                      <View className="bg-[#262b2fa0] pt-6 pb-6 border-b border-[#353840] flex-row justify-center items-center">
                         <View className="flex-row items-center gap-2">
-                          <MaterialCommunityIcons name="tag-outline" size={16} color="white" />
-                          <Text className="font-bold text-sm text-white">Traits</Text>
+                          <Text className="font-extrabold text-white tracking-wider text-xl">TRAITS</Text>
                         </View>
                       </View>
-                      <View className="p-3 bg-[#202225] flex-row flex-wrap gap-1.5">
-                        {pokemon_stats && pokemon_stats.slice(0, 6).map((s, index) => (
-                          <View 
-                            key={`stat-${index}`} 
-                            style={{ 
-                              width: '31.5%',
-                              backgroundColor: 'rgba(21, 178, 229, 0.06)', 
-                              borderColor: '#15b2e5',
-                              borderWidth: 1,
-                              borderRadius: 8,
-                              padding: 8,
-                              alignItems: 'center'
-                            }}
-                          >
-                            <Text className="uppercase text-[8px] font-bold tracking-wider mb-0.5 text-center" style={{ color: '#15b2e5' }}>{s.name.slice(0,3)}</Text>
-                            <Text className="text-gray-100 font-bold text-xs text-center mb-0.5">{s.value}</Text>
-                            <Text className="text-[#8a939b] text-[8px]">Base</Text>
-                          </View>
-                        ))}
-                        {pokemon_types && pokemon_types.map((t, index) => (
-                          <View 
-                            key={`type-${index}`} 
-                            style={{ 
-                              width: '31.5%',
-                              backgroundColor: 'rgba(21, 178, 229, 0.06)', 
-                              borderColor: '#15b2e5',
-                              borderWidth: 1,
-                              borderRadius: 8,
-                              padding: 8,
-                              alignItems: 'center'
-                            }}
-                          >
-                            <Text className="uppercase text-[8px] font-bold tracking-wider mb-0.5" style={{ color: '#15b2e5' }}>Type</Text>
-                            <Text className="text-gray-100 font-bold text-xs capitalize mb-0.5">{t}</Text>
-                            <Text className="py-5 text-[#8a939b] text-[8px]">Attr</Text>
-                          </View>
-                        ))}
+                      <View className="p-4 bg-[#202225a0]">
+                        {(() => {
+                          const allTraits = [
+                            ...(pokemon_stats?.slice(0, 6).map(s => ({ type: 'stat', name: s.name, value: s.value })) || []),
+                            ...(pokemon_types?.map(t => ({ type: 'type', value: t })) || [])
+                          ];
+                          
+                          const rows = [];
+                          for (let i = 0; i < allTraits.length; i += 3) {
+                            rows.push(allTraits.slice(i, i + 3));
+                          }
+
+                          return rows.map((row, rowIndex) => (
+                            <View key={`row-${rowIndex}`} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, width: '100%' }}>
+                              {row.map((item, index) => (
+                                <View 
+                                  key={`trait-${rowIndex}-${index}`} 
+                                  style={{ 
+                                    width: '31%', 
+                                    backgroundColor: 'rgba(21, 178, 229, 0.06)', 
+                                    borderColor: '#15b2e5', 
+                                    borderWidth: 1, 
+                                    borderRadius: 8, 
+                                    paddingVertical: 12,
+                                    paddingHorizontal: 6,
+                                    alignItems: 'center' 
+                                  }}
+                                >
+                                  {item.type === 'stat' ? (
+                                    <>
+                                      <Text style={{ color: '#15b2e5', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4, textAlign: 'center' }}>{item.name}</Text>
+                                      <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>{item.value}</Text>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Text style={{ color: '#15b2e5', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Type</Text>
+                                      <Text style={{ color: '#f3f4f6', fontWeight: 'bold', fontSize: 16, textTransform: 'capitalize' }}>{item.value}</Text>
+                                    </>
+                                  )}
+                                </View>
+                              ))}
+                              {/* Fill empty slots if row has less than 3 items */}
+                              {row.length < 3 && Array(3 - row.length).fill(null).map((_, i) => (
+                                <View key={`empty-${i}`} style={{ width: '31%' }} />
+                              ))}
+                            </View>
+                          ));
+                        })()}
                       </View>
                     </View>
                   </View>
@@ -426,9 +479,10 @@ const App = ({pokemon_url, pokemon_name, pokemon_stats, pokemon_image, pokemon_t
           
         </Modal>
         <Pressable
-          style={[styles.button, styles.buttonOpen]}
+          style={[styles.button, Platform.OS !== 'web' && styles.buttonOpen]}
+          className={Platform.OS === 'web' ? "glow-on-hover justify-center items-center mt-6" : ""}
           onPress={() => setModalVisible(true)}>
-          <Text style={styles.textStyle}>Show Modal</Text>
+          <Text style={[styles.textStyle, Platform.OS === 'web' && { fontWeight: 'normal' }]}>Show NFT</Text>
         </Pressable>
       </View>
     </SafeAreaProvider>
@@ -453,16 +507,24 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 20,
-    padding: 10,
+    padding: 0,
     elevation: 2,
   },
   buttonOpen: {
-    backgroundColor: '#F194FF',
+    backgroundColor: '#111',
+    marginTop: 4,
+    width: 80,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   textStyle: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
+    fontSize: 10,
   },
   modalText: {
     marginBottom: 15,

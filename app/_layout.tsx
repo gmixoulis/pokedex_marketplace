@@ -31,7 +31,7 @@ const sdkOptions = {
     iconUrl: '',
     scheme: 'pokedexmarketplace',
   },
-  infuraAPIKey: '355f29324c6e482083ea80b99da6ba1d',
+  infuraAPIKey: process.env.EXPO_PUBLIC_INFURA_API_KEY || '355f29324c6e482083ea80b99da6ba1d',
   checkInstallationImmediately: false, // Prevent immediate check which might crash
 };
 

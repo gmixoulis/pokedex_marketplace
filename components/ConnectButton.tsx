@@ -1,5 +1,4 @@
 import { useSDK } from "@metamask/sdk-react-native";
-import { ethers } from "ethers";
 import React, { useState } from 'react';
 import { Platform, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useSnapshot } from 'valtio';
@@ -16,23 +15,40 @@ const ConnectButton = () => {
     setConnecting(true);
     try {
       if (Platform.OS === 'web') {
-        if (window.ethereum) {
-          const provider = new ethers.providers.Web3Provider(window.ethereum as any);
-          
-          // Add timeout to prevent stuck state
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Connection timed out. Please check MetaMask extension.")), 15000)
+        // Find MetaMask provider specifically (handles multiple wallet extensions)
+        let ethereum = window.ethereum;
+        
+        // If multiple providers exist, find MetaMask specifically
+        if (window.ethereum?.providers?.length) {
+          const metaMaskProvider = window.ethereum.providers.find(
+            (p: any) => p.isMetaMask && !p.isPhantom
           );
-          
-          const connectPromise = provider.send("eth_requestAccounts", []);
-          
-          await Promise.race([connectPromise, timeoutPromise]);
-          
-          const signer = provider.getSigner();
-          const userAddress = await signer.getAddress();
-          setWalletAddress(userAddress);
-        } else {
-          alert("Please install MetaMask!");
+          if (metaMaskProvider) {
+            ethereum = metaMaskProvider;
+            console.log('Found MetaMask among multiple providers');
+          }
+        } else if (window.ethereum?.isPhantom) {
+          // Phantom is the primary provider, try to find MetaMask anyway
+          console.warn('Phantom is primary provider. Looking for MetaMask...');
+          // MetaMask may still be available but overridden
+        }
+        
+        if (!ethereum?.isMetaMask) {
+          alert("MetaMask not found. Please make sure MetaMask is installed and enabled.");
+          setConnecting(false);
+          return;
+        }
+        
+        console.log('Requesting accounts from MetaMask...');
+        
+        // Use direct ethereum.request for better compatibility
+        const accounts = await ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        
+        if (accounts && accounts.length > 0) {
+          console.log('Connected:', accounts[0]);
+          setWalletAddress(accounts[0]);
         }
       } else {
         // Native SDK
