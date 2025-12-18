@@ -74,7 +74,7 @@ _Full walkthrough: browsing Pokémon, connecting MetaMask wallet, and claiming N
 
 ## ⏱️ Development Effort
 
-**Estimated: 40+ Hours**
+**Estimated: 20+ Hours**
 
 This project represents significant effort across:
 
